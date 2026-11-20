@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AlgoViz Studio Pro — Sorting Algorithm Visualizer</title>
+  <title>AlgoViz Studio — Canvas Sorting Visualizer</title>
   <style>
     :root {
       --bg-primary: #090d16;
@@ -34,7 +34,6 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
     }
 
     /* Header */
@@ -154,7 +153,7 @@
       width: 110px;
     }
 
-    /* Sub-bar: Custom Array, Audio Controls & Legend */
+    /* Sub-bar */
     .sub-bar {
       background-color: #0d1322;
       border-bottom: 1px solid var(--border);
@@ -172,8 +171,8 @@
       align-items: center;
       gap: 0.45rem;
       flex: 1;
-      min-width: 240px;
-      max-width: 440px;
+      min-width: 220px;
+      max-width: 420px;
     }
 
     .custom-input-wrap input { width: 100%; }
@@ -182,7 +181,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.55rem;
       color: var(--text-secondary);
       font-size: 0.75rem;
     }
@@ -194,7 +193,7 @@
     }
 
     .audio-controls input[type="range"] {
-      width: 72px;
+      width: 76px;
       padding: 0;
     }
 
@@ -222,16 +221,17 @@
     main {
       flex: 1;
       display: grid;
-      grid-template-columns: 1fr 355px;
+      grid-template-columns: 1fr 345px;
       gap: 1rem;
       padding: 1rem 1.25rem;
+      align-items: start;
     }
 
     @media (max-width: 1020px) {
       main { grid-template-columns: 1fr; }
     }
 
-    /* Stage */
+    /* Stage: Fixed well-proportioned height instead of stretching vertically */
     .stage-container {
       background-color: var(--bg-secondary);
       border: 1px solid var(--border);
@@ -239,7 +239,6 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      min-height: 460px;
     }
 
     .stats-strip {
@@ -263,20 +262,19 @@
       color: var(--accent);
     }
 
-    .visualizer-viewport {
-      flex: 1;
+    .canvas-frame {
       position: relative;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 1.5rem 0.75rem 0.4rem 0.75rem;
-      background: radial-gradient(circle at 50% 100%, rgba(56, 189, 248, 0.04), transparent 70%);
+      width: 100%;
+      height: 360px;
+      padding: 0.75rem;
+      background: radial-gradient(circle at 50% 100%, rgba(56, 189, 248, 0.05), transparent 72%);
     }
 
-    #canvasArea {
+    #sortCanvas {
       width: 100%;
       height: 100%;
       display: block;
+      border-radius: 6px;
     }
 
     /* Sidebar */
@@ -287,7 +285,7 @@
       padding: 1.15rem;
       display: flex;
       flex-direction: column;
-      gap: 1.1rem;
+      gap: 1rem;
     }
 
     .info-section h2 {
@@ -334,10 +332,10 @@
       background-color: var(--bg-primary);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 0.8rem;
+      padding: 0.75rem;
       font-family: 'Fira Code', 'Courier New', monospace;
-      font-size: 0.75rem;
-      line-height: 1.42;
+      font-size: 0.74rem;
+      line-height: 1.4;
       color: #cbd5e1;
       overflow-x: auto;
     }
@@ -346,7 +344,7 @@
       font-size: 0.72rem;
       color: var(--text-secondary);
       border-top: 1px solid var(--border);
-      padding-top: 0.7rem;
+      padding-top: 0.65rem;
       line-height: 1.5;
     }
 
@@ -367,7 +365,7 @@
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2">
         <path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8" rx="1"/><rect x="12" y="6" width="3" height="12" rx="1"/><rect x="17" y="13" width="3" height="5" rx="1"/>
       </svg>
-      Algo<span>Viz</span> Studio <span class="badge">Pro</span>
+      Algo<span>Viz</span> Studio <span class="badge">Canvas</span>
     </div>
 
     <div class="controls-group">
@@ -400,17 +398,18 @@
       </div>
 
       <div class="control-item">
-        <label for="sizeSlider">Array Size: <span id="sizeVal">80</span></label>
-        <input type="range" id="sizeSlider" min="10" max="600" step="5" value="80" />
+        <label for="sizeSlider">Array Size: <span id="sizeVal">120</span></label>
+        <input type="range" id="sizeSlider" min="10" max="800" step="10" value="120" />
       </div>
 
       <div class="control-item">
-        <label for="speedSlider">Speed: <span id="speedVal">78%</span></label>
-        <input type="range" id="speedSlider" min="1" max="100" value="78" />
+        <label for="speedSlider">Speed: <span id="speedVal">75%</span></label>
+        <input type="range" id="speedSlider" min="1" max="100" value="75" />
       </div>
     </div>
 
     <div class="controls-group">
+      <button id="testSoundBtn" class="toggle-btn" title="Play a test tone to verify audio output">♪ Test Tone</button>
       <button id="soundToggle" class="toggle-btn active" title="Toggle Web Audio Synthesizer">🔊 Sound On</button>
       <button id="generateBtn">↻ New</button>
       <button id="stepBtn" title="Single Step (Right Arrow)">⏭ Step</button>
@@ -428,10 +427,10 @@
     <div class="audio-controls">
       <span>Synth:</span>
       <select id="waveSelect" title="Oscillator Waveform">
-        <option value="triangle" selected>Triangle</option>
-        <option value="sine">Sine</option>
-        <option value="sawtooth">Sawtooth</option>
+        <option value="sawtooth" selected>Sawtooth</option>
         <option value="square">Square</option>
+        <option value="triangle">Triangle</option>
+        <option value="sine">Sine</option>
       </select>
 
       <select id="scaleSelect" title="Musical Scale Quantization">
@@ -442,7 +441,7 @@
       </select>
 
       <span>Vol:</span>
-      <input type="range" id="volumeSlider" min="0" max="100" value="35" title="Master Volume" />
+      <input type="range" id="volumeSlider" min="0" max="100" value="65" title="Master Volume" />
     </div>
 
     <div class="legend">
@@ -464,15 +463,15 @@
         <div class="stat-box"><span>Elapsed:</span><strong id="timeElapsed">0.0s</strong></div>
       </div>
 
-      <div class="visualizer-viewport" id="viewport">
-        <canvas id="canvasArea"></canvas>
+      <div class="canvas-frame" id="canvasFrame">
+        <canvas id="sortCanvas"></canvas>
       </div>
     </section>
 
     <aside>
       <div class="info-section">
         <h2 id="algoTitle">Quick Sort (Lomuto)</h2>
-        <p id="algoDesc">Selects a pivot element, partitions elements smaller than the pivot to the left and larger to the right, and recursively sorts the partitions.</p>
+        <p id="algoDesc">Partitions the array around a pivot so smaller values precede it and larger values follow, then recurses on both sides.</p>
       </div>
 
       <div class="complexity-grid">
@@ -506,84 +505,81 @@
   </main>
 
   <script>
-    /**
-     * Algorithm Metadata & Pseudocode
-     */
     const ALGO_INFO = {
       bubble: {
         title: "Bubble Sort",
         desc: "Repeatedly steps through adjacent pairs and swaps out-of-order elements until no swaps occur in a full pass.",
         best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
-        code: `for i = 0 to n - 1:\n  swapped = false\n  for j = 0 to n - i - 2:\n    if arr[j] > arr[j + 1]:\n      swap(arr[j], arr[j + 1])\n      swapped = true\n  if not swapped: break`
+        code: `for i = 0 to n - 1:\n  swapped = false\n  for j = 0 to n - i - 2:\n    if arr[j] > arr[j + 1]:\n      swap(arr[j], arr[j + 1]); swapped = true\n  if not swapped: break`
       },
       cocktail: {
         title: "Cocktail Shaker Sort",
-        desc: "A bidirectional variant of Bubble Sort that alternates passes forward and backward, moving small elements left and large elements right.",
+        desc: "Alternates passes forward and backward, moving small elements left and large elements right.",
         best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
-        code: `do:\n  swapped = false\n  for i = start to end - 1: check & swap\n  end--\n  for i = end - 1 down to start: check & swap\n  start++\nwhile swapped`
+        code: `do:\n  swapped = false\n  forward pass start..end-1; end--\n  backward pass end-1..start; start++\nwhile swapped`
       },
       selection: {
         title: "Selection Sort",
-        desc: "Finds the minimum element in the unsorted region on each pass and swaps it with the first unsorted position.",
+        desc: "Finds the minimum element in the unsorted region on each pass and swaps it into place.",
         best: "O(n²)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
-        code: `for i = 0 to n - 1:\n  minIdx = i\n  for j = i + 1 to n - 1:\n    if arr[j] < arr[minIdx]: minIdx = j\n  swap(arr[i], arr[minIdx])`
+        code: `for i = 0 to n - 1:\n  minIdx = findMin(arr, i, n - 1)\n  swap(arr[i], arr[minIdx])`
       },
       insertion: {
         title: "Insertion Sort",
-        desc: "Builds a sorted prefix one element at a time by shifting larger elements right and inserting the current key into place.",
+        desc: "Builds a sorted prefix one item at a time by shifting larger elements right and inserting the key.",
         best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
         code: `for i = 1 to n - 1:\n  key = arr[i]; j = i - 1\n  while j >= 0 and arr[j] > key:\n    arr[j + 1] = arr[j]; j--\n  arr[j + 1] = key`
       },
       shell: {
         title: "Shell Sort",
-        desc: "Generalizes Insertion Sort by sorting elements separated by a diminishing gap sequence, allowing distant items to move quickly.",
+        desc: "Sorts elements separated by a diminishing gap sequence so distant values reach their range quickly.",
         best: "O(n log n)", avg: "O(n^1.25)", worst: "O(n²)", space: "O(1)",
-        code: `for gap = floor(n/2); gap > 0; gap = floor(gap/2):\n  for i = gap to n - 1:\n    insert arr[i] at gap-spaced position`
+        code: `for gap = floor(n/2); gap > 0; gap = floor(gap/2):\n  for i = gap to n - 1:\n    gap-insert arr[i]`
       },
       merge: {
         title: "Merge Sort",
-        desc: "Recursively divides the array in half, sorts each half, and merges sorted subarrays with guaranteed O(n log n) performance.",
+        desc: "Divides the array recursively into halves and merges sorted subarrays with guaranteed O(n log n) time.",
         best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
         code: `mergeSort(l, r):\n  if l >= r: return\n  m = floor((l + r) / 2)\n  mergeSort(l, m); mergeSort(m + 1, r)\n  merge(l, m, r)`
       },
       quick: {
         title: "Quick Sort (Lomuto)",
-        desc: "Partitions the array around a pivot so smaller values precede it and larger values follow, then recurses on both sides.",
+        desc: "Partitions around a pivot element so smaller items move left and larger items move right, then recurses.",
         best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(log n)",
         code: `quickSort(low, high):\n  if low < high:\n    p = partition(low, high)\n    quickSort(low, p - 1); quickSort(p + 1, high)`
       },
       heap: {
         title: "Heap Sort",
-        desc: "Builds a max-heap in-place and repeatedly extracts the maximum element from index 0 to the end of the unsorted suffix.",
+        desc: "Builds a max-heap in-place and repeatedly extracts the root maximum to the end of the array.",
         best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1)",
-        code: `buildMaxHeap(arr)\nfor i = n - 1 down to 1:\n  swap(arr[0], arr[i])\n  heapify(i, 0)`
+        code: `buildMaxHeap(arr)\nfor i = n - 1 down to 1:\n  swap(arr[0], arr[i]); heapify(i, 0)`
       },
       radix: {
         title: "Radix Sort (LSD Base-10)",
-        desc: "Non-comparative integer sort that groups numbers by each digit place from least significant to most significant using stable buckets.",
+        desc: "Groups integers digit by digit from least significant to most significant using stable buckets.",
         best: "O(d·(n + k))", avg: "O(d·(n + k))", worst: "O(d·(n + k))", space: "O(n + k)",
-        code: `for exp = 1; floor(max / exp) > 0; exp *= 10:\n  countingSortByDigit(arr, exp)`
+        code: `for exp = 1; floor(max / exp) > 0; exp *= 10:\n  stableBucketSortByDigit(arr, exp)`
       },
       counting: {
         title: "Counting Sort",
-        desc: "Counts occurrences of each value in a frequency table and reconstructs the sorted output directly without pairwise comparisons.",
+        desc: "Tallies value frequencies and writes sorted values back directly without pairwise comparisons.",
         best: "O(n + k)", avg: "O(n + k)", worst: "O(n + k)", space: "O(k)",
-        code: `count frequencies of each value\nwrite each value back count[val] times`
+        code: `count frequencies of each value\nwrite each value count[val] times in order`
       }
     };
 
     /**
-     * Polyphonic Web Audio Engine with Envelope Shaping, Scale Quantization & Sweep
+     * Reliable Web Audio Synthesizer
+     * Uses explicit per-note gain scheduling + safe cooldown + automatic AudioContext resume.
      */
     class SoundEngine {
       constructor() {
         this.ctx = null;
-        this.masterGain = null;
         this.enabled = true;
-        this.volume = 0.35;
-        this.waveform = 'triangle';
+        this.volume = 0.65;
+        this.waveform = 'sawtooth';
         this.scale = 'continuous';
-        this.lastSoundTime = 0;
+        this.lastNoteTime = 0;
 
         this.scales = {
           pentatonic: [0, 2, 4, 7, 9],
@@ -592,104 +588,98 @@
         };
       }
 
-      ensureContext() {
+      async unlock() {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
         if (!this.ctx) {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioCtx();
-          this.masterGain = this.ctx.createGain();
-          this.masterGain.gain.value = this.enabled ? this.volume : 0;
-          this.masterGain.connect(this.ctx.destination);
         }
         if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
+          try {
+            await this.ctx.resume();
+          } catch (_) {}
         }
+        return this.ctx;
       }
 
-      setEnabled(flag) {
-        this.enabled = flag;
-        if (flag) this.ensureContext();
-        if (this.masterGain && this.ctx) {
-          this.masterGain.gain.setTargetAtTime(this.enabled ? this.volume : 0, this.ctx.currentTime, 0.015);
-        }
-      }
-
-      setVolume(vol0to1) {
-        this.volume = vol0to1;
-        if (this.masterGain && this.ctx && this.enabled) {
-          this.masterGain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.015);
-        }
-      }
-
-      quantizeFrequency(ratio) {
-        const clamped = Math.max(0, Math.min(1, ratio));
+      getFrequency(ratio) {
+        const t = Math.max(0, Math.min(1, ratio));
         if (this.scale === 'continuous' || !this.scales[this.scale]) {
-          const minFreq = 150;
-          const maxFreq = 1100;
-          return minFreq * Math.pow(maxFreq / minFreq, clamped);
+          // 160 Hz to 1050 Hz exponential curve
+          return 160 * Math.pow(1050 / 160, t);
         }
-
         const intervals = this.scales[this.scale];
         const octaves = 3;
-        const totalSteps = intervals.length * octaves;
-        const stepIdx = Math.min(totalSteps - 1, Math.floor(clamped * totalSteps));
-        const octave = Math.floor(stepIdx / intervals.length);
-        const degree = stepIdx % intervals.length;
-        const semitoneFromC3 = octave * 12 + intervals[degree];
-        const midiNote = 48 + semitoneFromC3;
-        return 440 * Math.pow(2, (midiNote - 69) / 12);
+        const total = intervals.length * octaves;
+        const idx = Math.min(total - 1, Math.floor(t * total));
+        const octave = Math.floor(idx / intervals.length);
+        const semitone = octave * 12 + intervals[idx % intervals.length];
+        const midi = 48 + semitone; // C3
+        return 440 * Math.pow(2, (midi - 69) / 12);
       }
 
-      playTone(value, maxVal, durationSec = 0.055, customWave = null) {
-        if (!this.enabled) return;
-        this.ensureContext();
-        if (!this.ctx || !this.masterGain) return;
+      play(value, maxVal, duration = 0.065, force = false) {
+        if (!this.enabled || this.volume <= 0.001) return;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+
+        if (!this.ctx) {
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
 
         const now = this.ctx.currentTime;
-        if (now - this.lastSoundTime < 0.012) return;
-        this.lastSoundTime = now;
+        // Minimum spacing prevents clipping/clicks during fast multi-step frames
+        if (!force && now - this.lastNoteTime < 0.022) return;
+        this.lastNoteTime = now;
 
-        const freq = this.quantizeFrequency(value / Math.max(maxVal, 1));
+        const freq = this.getFrequency(value / Math.max(maxVal, 1));
         const osc = this.ctx.createOscillator();
-        const env = this.ctx.createGain();
+        const gain = this.ctx.createGain();
 
-        osc.type = customWave || this.waveform;
+        osc.type = this.waveform;
         osc.frequency.setValueAtTime(freq, now);
 
-        const peakGain = 0.22;
-        env.gain.setValueAtTime(0.0001, now);
-        env.gain.linearRampToValueAtTime(peakGain, now + 0.006);
-        env.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+        const peak = Math.min(0.45, Math.max(0.01, this.volume * 0.42));
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(peak, now + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-        osc.connect(env);
-        env.connect(this.masterGain);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
 
         osc.start(now);
-        osc.stop(now + durationSec + 0.01);
+        osc.stop(now + duration + 0.015);
       }
 
-      playCompletionArpeggio() {
-        if (!this.enabled) return;
-        this.ensureContext();
-        const notes = [523.25, 659.25, 783.99, 1046.5];
-        notes.forEach((freq, idx) => {
-          const now = this.ctx.currentTime + idx * 0.065;
-          const osc = this.ctx.createOscillator();
-          const env = this.ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now);
-          env.gain.setValueAtTime(0.0001, now);
-          env.gain.linearRampToValueAtTime(0.2, now + 0.015);
-          env.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
-          osc.connect(env);
-          env.connect(this.masterGain);
-          osc.start(now);
-          osc.stop(now + 0.3);
+      playSweepDone() {
+        if (!this.enabled || this.volume <= 0.001) return;
+        this.unlock().then((ctx) => {
+          if (!ctx) return;
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((freq, i) => {
+            const start = ctx.currentTime + i * 0.07;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, start);
+            const peak = Math.min(0.35, this.volume * 0.35);
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.linearRampToValueAtTime(peak, start + 0.012);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.25);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.27);
+          });
         });
       }
     }
 
     /**
-     * Application State & DOM
+     * State & DOM
      */
     const state = {
       originalArray: [],
@@ -715,6 +705,7 @@
       sizeVal: document.getElementById('sizeVal'),
       speedSlider: document.getElementById('speedSlider'),
       speedVal: document.getElementById('speedVal'),
+      testSoundBtn: document.getElementById('testSoundBtn'),
       soundToggle: document.getElementById('soundToggle'),
       generateBtn: document.getElementById('generateBtn'),
       stepBtn: document.getElementById('stepBtn'),
@@ -725,8 +716,8 @@
       waveSelect: document.getElementById('waveSelect'),
       scaleSelect: document.getElementById('scaleSelect'),
       volumeSlider: document.getElementById('volumeSlider'),
-      viewport: document.getElementById('viewport'),
-      canvasArea: document.getElementById('canvasArea'),
+      canvasFrame: document.getElementById('canvasFrame'),
+      sortCanvas: document.getElementById('sortCanvas'),
       statusText: document.getElementById('statusText'),
       compCount: document.getElementById('compCount'),
       swapCount: document.getElementById('swapCount'),
@@ -741,10 +732,10 @@
       algoCode: document.getElementById('algoCode')
     };
 
-    const ctx2d = dom.canvasArea.getContext('2d');
+    const ctx = dom.sortCanvas.getContext('2d');
 
     /**
-     * Data Distributions
+     * Array Generation
      */
     function generateArray() {
       stopExecution();
@@ -753,9 +744,7 @@
       const arr = [];
 
       if (dist === 'random') {
-        for (let i = 0; i < size; i++) {
-          arr.push(Math.floor(Math.random() * 96) + 4);
-        }
+        for (let i = 0; i < size; i++) arr.push(Math.floor(Math.random() * 96) + 4);
       } else if (dist === 'reversed') {
         for (let i = 0; i < size; i++) {
           arr.push(Math.max(4, Math.round(4 + ((size - 1 - i) / Math.max(size - 1, 1)) * 96)));
@@ -772,9 +761,7 @@
         }
       } else if (dist === 'fewUnique') {
         const palette = [16, 36, 56, 76, 96];
-        for (let i = 0; i < size; i++) {
-          arr.push(palette[i % palette.length]);
-        }
+        for (let i = 0; i < size; i++) arr.push(palette[i % palette.length]);
         for (let i = arr.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -811,71 +798,76 @@
       dom.playPauseBtn.textContent = "▶ Start";
       dom.playPauseBtn.disabled = false;
       dom.stepBtn.disabled = false;
-      render();
+      renderCanvas();
     }
 
     /**
-     * High-DPI HTML5 Canvas Renderer
+     * Canvas Renderer
      */
-    function getBarColor(index) {
-      if (state.highlights.swap.includes(index)) return '#ef4444';
-      if (state.highlights.compare.includes(index)) return '#f59e0b';
-      if (state.highlights.pivot.includes(index)) return '#c084fc';
-      if (state.highlights.sorted.has(index)) return '#10b981';
+    function getColor(idx) {
+      if (state.highlights.swap.includes(idx)) return '#ef4444';
+      if (state.highlights.compare.includes(idx)) return '#f59e0b';
+      if (state.highlights.pivot.includes(idx)) return '#c084fc';
+      if (state.highlights.sorted.has(idx)) return '#10b981';
       return '#6366f1';
     }
 
-    function render() {
+    function renderCanvas() {
       const dpr = window.devicePixelRatio || 1;
-      const rect = dom.viewport.getBoundingClientRect();
-      const width = Math.max(100, rect.width - 24);
-      const height = Math.max(120, rect.height - 24);
+      const rect = dom.sortCanvas.getBoundingClientRect();
+      const width = Math.max(120, rect.width);
+      const height = Math.max(120, rect.height);
 
-      if (dom.canvasArea.width !== Math.floor(width * dpr) || dom.canvasArea.height !== Math.floor(height * dpr)) {
-        dom.canvasArea.width = Math.floor(width * dpr);
-        dom.canvasArea.height = Math.floor(height * dpr);
+      const targetW = Math.floor(width * dpr);
+      const targetH = Math.floor(height * dpr);
+      if (dom.sortCanvas.width !== targetW || dom.sortCanvas.height !== targetH) {
+        dom.sortCanvas.width = targetW;
+        dom.sortCanvas.height = targetH;
       }
 
-      ctx2d.save();
-      ctx2d.scale(dpr, dpr);
-      ctx2d.clearRect(0, 0, width, height);
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, width, height);
+
+      // Subtle baseline
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, height - 1);
+      ctx.lineTo(width, height - 1);
+      ctx.stroke();
 
       const arr = state.array;
       const n = arr.length;
-      const maxVal = Math.max(...arr, 100);
-      const showLabels = n <= 30;
-      const topPadding = showLabels ? 22 : 12;
-      const gap = n > 300 ? 0.5 : (n > 90 ? 1 : 2);
-      const barWidth = Math.max(1, (width - gap * (n - 1)) / n);
-
-      if (showLabels) {
-        ctx2d.font = '600 10px Inter, system-ui, sans-serif';
-        ctx2d.textAlign = 'center';
-        ctx2d.textBaseline = 'bottom';
+      if (n === 0) {
+        ctx.restore();
+        return;
       }
 
+      const maxVal = Math.max(...arr, 100);
+      const gap = n > 400 ? 0.4 : n > 160 ? 1 : 2;
+      const barWidth = Math.max(1, (width - gap * (n - 1)) / n);
+      const showLabels = n <= 28 && barWidth >= 18;
+
+      ctx.font = '600 10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+
       for (let i = 0; i < n; i++) {
-        const barHeight = Math.max(2, (arr[i] / maxVal) * (height - topPadding));
+        const ratio = arr[i] / maxVal;
+        const barHeight = Math.max(2, ratio * (height - (showLabels ? 24 : 8)));
         const x = i * (barWidth + gap);
         const y = height - barHeight;
 
-        ctx2d.fillStyle = getBarColor(i);
-        if (barWidth >= 4) {
-          const r = Math.min(3, barWidth / 2, barHeight / 2);
-          ctx2d.beginPath();
-          ctx2d.roundRect(x, y, barWidth, barHeight, [r, r, 0, 0]);
-          ctx2d.fill();
-        } else {
-          ctx2d.fillRect(x, y, barWidth, barHeight);
-        }
+        ctx.fillStyle = getColor(i);
+        ctx.fillRect(x, y, barWidth, barHeight);
 
         if (showLabels) {
-          ctx2d.fillStyle = '#94a3b8';
-          ctx2d.fillText(arr[i], x + barWidth / 2, y - 3);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillText(arr[i], x + barWidth / 2, y - 4);
         }
       }
 
-      ctx2d.restore();
+      ctx.restore();
     }
 
     function updateStatsUI(status) {
@@ -886,7 +878,7 @@
     }
 
     /**
-     * Generator-Based Sorting Algorithms (10 Algorithms)
+     * Generator-Based Sorting Algorithms
      */
     const SortingGenerators = {
       *bubble(arr) {
@@ -916,7 +908,6 @@
         let start = 0;
         let end = arr.length - 1;
         let swapped = true;
-
         while (swapped) {
           swapped = false;
           for (let i = start; i < end; i++) {
@@ -932,7 +923,6 @@
           state.highlights.sorted.add(end);
           end--;
           if (!swapped) break;
-
           swapped = false;
           for (let i = end - 1; i >= start; i--) {
             state.comparisons++;
@@ -1037,17 +1027,12 @@
           while (i < leftPart.length && j < rightPart.length) {
             state.comparisons++;
             yield { compare: [left + i, mid + 1 + j], swap: [], pivot: [mid], soundVal: Math.min(leftPart[i], rightPart[j]) };
-            if (leftPart[i] <= rightPart[j]) {
-              arr[k] = leftPart[i++];
-            } else {
-              arr[k] = rightPart[j++];
-            }
+            arr[k] = leftPart[i] <= rightPart[j] ? leftPart[i++] : rightPart[j++];
             state.swaps++;
             if (left === 0 && right === arr.length - 1) state.highlights.sorted.add(k);
             yield { compare: [], swap: [k], pivot: [], soundVal: arr[k] };
             k++;
           }
-
           while (i < leftPart.length) {
             arr[k] = leftPart[i++];
             state.swaps++;
@@ -1055,7 +1040,6 @@
             yield { compare: [], swap: [k], pivot: [], soundVal: arr[k] };
             k++;
           }
-
           while (j < rightPart.length) {
             arr[k] = rightPart[j++];
             state.swaps++;
@@ -1104,24 +1088,20 @@
 
       *heap(arr) {
         const n = arr.length;
-
         function* heapify(heapSize, rootIdx) {
           let largest = rootIdx;
           const left = 2 * rootIdx + 1;
           const right = 2 * rootIdx + 2;
-
           if (left < heapSize) {
             state.comparisons++;
             yield { compare: [left, largest], swap: [], pivot: [rootIdx], soundVal: arr[left] };
             if (arr[left] > arr[largest]) largest = left;
           }
-
           if (right < heapSize) {
             state.comparisons++;
             yield { compare: [right, largest], swap: [], pivot: [rootIdx], soundVal: arr[right] };
             if (arr[right] > arr[largest]) largest = right;
           }
-
           if (largest !== rootIdx) {
             [arr[rootIdx], arr[largest]] = [arr[largest], arr[rootIdx]];
             state.swaps++;
@@ -1129,11 +1109,7 @@
             yield* heapify(heapSize, largest);
           }
         }
-
-        for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
-          yield* heapify(n, i);
-        }
-
+        for (let i = Math.floor(n / 2) - 1; i >= 0; i--) yield* heapify(n, i);
         for (let i = n - 1; i > 0; i--) {
           [arr[0], arr[i]] = [arr[i], arr[0]];
           state.swaps++;
@@ -1147,7 +1123,6 @@
       *radix(arr) {
         const n = arr.length;
         const maxVal = Math.max(...arr, 1);
-
         for (let exp = 1; Math.floor(maxVal / exp) > 0; exp *= 10) {
           const buckets = Array.from({ length: 10 }, () => []);
           for (let i = 0; i < n; i++) {
@@ -1155,7 +1130,6 @@
             buckets[digit].push(arr[i]);
             yield { compare: [i], swap: [], pivot: [], soundVal: arr[i] };
           }
-
           let idx = 0;
           for (let b = 0; b < 10; b++) {
             for (const val of buckets[b]) {
@@ -1172,12 +1146,10 @@
         const n = arr.length;
         const maxVal = Math.max(...arr, 1);
         const freq = new Array(maxVal + 1).fill(0);
-
         for (let i = 0; i < n; i++) {
           freq[arr[i]]++;
           yield { compare: [i], swap: [], pivot: [], soundVal: arr[i] };
         }
-
         let writeIdx = 0;
         for (let v = 0; v <= maxVal; v++) {
           while (freq[v] > 0) {
@@ -1193,15 +1165,15 @@
     };
 
     /**
-     * Pacing & Frame Scheduling
+     * Execution Loop
      */
     function getStepsPerFrame() {
       const speed = parseInt(dom.speedSlider.value, 10);
       const size = state.array.length;
       if (speed <= 50) return 1;
       const factor = (speed - 50) / 50;
-      const scaleBoost = Math.max(1, Math.floor(size / 90));
-      return Math.max(1, Math.round(Math.pow(factor, 2.2) * 35 * scaleBoost));
+      const scaleBoost = Math.max(1, Math.floor(size / 100));
+      return Math.max(1, Math.round(Math.pow(factor, 2.2) * 40 * scaleBoost));
     }
 
     function getFrameIntervalMs() {
@@ -1211,31 +1183,16 @@
     }
 
     function stepOnce() {
-      if (state.isSorted) return { done: true, lastPayload: null };
-
+      if (state.isSorted) return { done: true, payload: null };
       if (!state.generator) {
         state.generator = SortingGenerators[dom.algoSelect.value](state.array);
       }
-
       const next = state.generator.next();
       if (next.done) {
         finishSorting();
-        return { done: true, lastPayload: null };
+        return { done: true, payload: null };
       }
-
-      return { done: false, lastPayload: next.value };
-    }
-
-    function handleSingleStepButton() {
-      if (state.isRunning) return;
-      audio.ensureContext();
-      updateStatsUI("Stepping");
-      const { done, lastPayload } = stepOnce();
-      if (!done && lastPayload) {
-        applyPayload(lastPayload, Math.max(...state.array));
-        render();
-        updateStatsUI();
-      }
+      return { done: false, payload: next.value };
     }
 
     function applyPayload(payload, maxVal) {
@@ -1243,18 +1200,30 @@
       state.highlights.compare = compare;
       state.highlights.swap = swap;
       state.highlights.pivot = pivot;
-
       if (soundVal !== undefined) {
-        audio.playTone(soundVal, maxVal, 0.05);
+        audio.play(soundVal, maxVal, 0.065);
+      }
+    }
+
+    function handleStep() {
+      if (state.isRunning) return;
+      audio.unlock();
+      updateStatsUI("Stepping");
+      const { done, payload } = stepOnce();
+      if (!done && payload) {
+        applyPayload(payload, Math.max(...state.array));
+        renderCanvas();
+        updateStatsUI();
       }
     }
 
     function startExecution() {
       if (state.isSorted) return;
-      audio.ensureContext();
+      audio.unlock();
       state.isRunning = true;
       state.isPaused = false;
       state.lastTickTime = performance.now();
+      let lastFrameTime = performance.now();
 
       dom.playPauseBtn.textContent = "⏸ Pause";
       dom.stepBtn.disabled = true;
@@ -1263,11 +1232,8 @@
       dom.distSelect.disabled = true;
       updateStatsUI("Sorting...");
 
-      let lastFrameTime = performance.now();
-
       function frame(now) {
         if (!state.isRunning || state.isPaused) return;
-
         state.elapsedMs += now - state.lastTickTime;
         state.lastTickTime = now;
 
@@ -1287,13 +1253,13 @@
               finished = true;
               break;
             }
-            latestPayload = res.lastPayload;
+            latestPayload = res.payload;
           }
 
           if (!finished && latestPayload) {
             applyPayload(latestPayload, maxVal);
           }
-          render();
+          renderCanvas();
           updateStatsUI();
         }
 
@@ -1331,14 +1297,14 @@
         compare: [],
         swap: [],
         pivot: [],
-        sorted: new Set(state.array.map((_, idx) => idx))
+        sorted: new Set(state.array.map((_, i) => i))
       };
-      render();
+      renderCanvas();
       updateStatsUI("Completed");
       dom.playPauseBtn.textContent = "✔ Sorted";
       dom.playPauseBtn.disabled = true;
       dom.stepBtn.disabled = true;
-      audio.playCompletionArpeggio();
+      audio.playSweepDone();
     }
 
     function updateSidebarInfo() {
@@ -1353,7 +1319,7 @@
     }
 
     /**
-     * Event Listeners & Keyboard Shortcuts
+     * Event Listeners
      */
     dom.algoSelect.addEventListener('change', () => {
       updateSidebarInfo();
@@ -1371,26 +1337,34 @@
       dom.speedVal.textContent = `${e.target.value}%`;
     });
 
+    dom.testSoundBtn.addEventListener('click', () => {
+      audio.unlock().then(() => {
+        audio.play(40, 100, 0.14, true);
+        setTimeout(() => audio.play(85, 100, 0.18, true), 150);
+      });
+    });
+
     dom.soundToggle.addEventListener('click', () => {
-      const next = !audio.enabled;
-      audio.setEnabled(next);
-      dom.soundToggle.textContent = next ? "🔊 Sound On" : "🔇 Sound Off";
-      dom.soundToggle.classList.toggle('active', next);
-      if (next) audio.playTone(75, 100, 0.08);
+      audio.enabled = !audio.enabled;
+      dom.soundToggle.textContent = audio.enabled ? "🔊 Sound On" : "🔇 Sound Off";
+      dom.soundToggle.classList.toggle('active', audio.enabled);
+      if (audio.enabled) {
+        audio.unlock().then(() => audio.play(65, 100, 0.12, true));
+      }
     });
 
     dom.waveSelect.addEventListener('change', (e) => {
       audio.waveform = e.target.value;
-      audio.playTone(65, 100, 0.08);
+      audio.unlock().then(() => audio.play(60, 100, 0.12, true));
     });
 
     dom.scaleSelect.addEventListener('change', (e) => {
       audio.scale = e.target.value;
-      audio.playTone(70, 100, 0.08);
+      audio.unlock().then(() => audio.play(70, 100, 0.12, true));
     });
 
     dom.volumeSlider.addEventListener('input', (e) => {
-      audio.setVolume(parseInt(e.target.value, 10) / 100);
+      audio.volume = parseInt(e.target.value, 10) / 100;
     });
 
     dom.generateBtn.addEventListener('click', generateArray);
@@ -1399,7 +1373,7 @@
       if (state.isRunning) pauseExecution();
       else startExecution();
     });
-    dom.stepBtn.addEventListener('click', handleSingleStepButton);
+    dom.stepBtn.addEventListener('click', handleStep);
 
     dom.applyCustomBtn.addEventListener('click', () => {
       const parsed = dom.customArrayInput.value
@@ -1412,13 +1386,13 @@
         return;
       }
 
-      state.originalArray = parsed.slice(0, 600);
+      state.originalArray = parsed.slice(0, 800);
       dom.sizeSlider.value = state.originalArray.length;
       dom.sizeVal.textContent = state.originalArray.length;
       resetToOriginal();
     });
 
-    window.addEventListener('resize', render);
+    window.addEventListener('resize', renderCanvas);
 
     window.addEventListener('keydown', (e) => {
       if (document.activeElement === dom.customArrayInput) return;
@@ -1428,7 +1402,7 @@
         else if (!state.isSorted) startExecution();
       } else if (e.code === 'ArrowRight') {
         e.preventDefault();
-        handleSingleStepButton();
+        handleStep();
       } else if (e.key === 'r' || e.key === 'R') {
         generateArray();
       } else if (e.key === 'm' || e.key === 'M') {
