@@ -17,6 +17,7 @@
       --bar-compare: #f59e0b;
       --bar-swap: #ef4444;
       --bar-pivot: #c084fc;
+      --bar-verify: #22d3ee;
       --bar-sorted: #10b981;
       --border: #273449;
     }
@@ -150,7 +151,7 @@
     input[type="range"] {
       accent-color: var(--accent);
       cursor: pointer;
-      width: 110px;
+      width: 115px;
     }
 
     /* Sub-bar */
@@ -172,7 +173,7 @@
       gap: 0.45rem;
       flex: 1;
       min-width: 220px;
-      max-width: 420px;
+      max-width: 400px;
     }
 
     .custom-input-wrap input { width: 100%; }
@@ -200,7 +201,7 @@
     .legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.85rem;
+      gap: 0.8rem;
       font-size: 0.76rem;
       color: var(--text-secondary);
     }
@@ -231,7 +232,7 @@
       main { grid-template-columns: 1fr; }
     }
 
-    /* Stage: Fixed well-proportioned height instead of stretching vertically */
+    /* Stage */
     .stage-container {
       background-color: var(--bg-secondary);
       border: 1px solid var(--border);
@@ -374,14 +375,17 @@
         <select id="algoSelect">
           <option value="bubble">Bubble Sort</option>
           <option value="cocktail">Cocktail Shaker Sort</option>
+          <option value="comb">Comb Sort</option>
           <option value="selection">Selection Sort</option>
           <option value="insertion">Insertion Sort</option>
           <option value="shell">Shell Sort</option>
           <option value="merge">Merge Sort</option>
-          <option value="quick" selected>Quick Sort (Lomuto)</option>
+          <option value="quickLomuto" selected>Quick Sort (Lomuto)</option>
+          <option value="quickHoare">Quick Sort (Hoare)</option>
           <option value="heap">Heap Sort</option>
           <option value="radix">Radix Sort (LSD Base-10)</option>
           <option value="counting">Counting Sort</option>
+          <option value="bitonic">Bitonic Sort</option>
         </select>
       </div>
 
@@ -398,13 +402,13 @@
       </div>
 
       <div class="control-item">
-        <label for="sizeSlider">Array Size: <span id="sizeVal">120</span></label>
-        <input type="range" id="sizeSlider" min="10" max="800" step="10" value="120" />
+        <label for="sizeSlider">Array Size: <span id="sizeVal">200</span></label>
+        <input type="range" id="sizeSlider" min="16" max="2000" step="16" value="200" />
       </div>
 
       <div class="control-item">
-        <label for="speedSlider">Speed: <span id="speedVal">75%</span></label>
-        <input type="range" id="speedSlider" min="1" max="100" value="75" />
+        <label for="speedSlider">Speed: <span id="speedVal">78%</span></label>
+        <input type="range" id="speedSlider" min="1" max="100" value="78" />
       </div>
     </div>
 
@@ -449,7 +453,8 @@
       <div class="legend-item"><div class="dot" style="background: var(--bar-compare);"></div>Compare</div>
       <div class="legend-item"><div class="dot" style="background: var(--bar-swap);"></div>Swap / Write</div>
       <div class="legend-item"><div class="dot" style="background: var(--bar-pivot);"></div>Pivot / Key</div>
-      <div class="legend-item"><div class="dot" style="background: var(--bar-sorted);"></div>Sorted</div>
+      <div class="legend-item"><div class="dot" style="background: var(--bar-verify);"></div>Final Sweep</div>
+      <div class="legend-item"><div class="dot" style="background: var(--bar-sorted);"></div>Verified Sorted</div>
     </div>
   </div>
 
@@ -471,7 +476,7 @@
     <aside>
       <div class="info-section">
         <h2 id="algoTitle">Quick Sort (Lomuto)</h2>
-        <p id="algoDesc">Partitions the array around a pivot so smaller values precede it and larger values follow, then recurses on both sides.</p>
+        <p id="algoDesc">Partitions around a pivot so smaller values move left and larger values move right, then recurses.</p>
       </div>
 
       <div class="complexity-grid">
@@ -508,7 +513,7 @@
     const ALGO_INFO = {
       bubble: {
         title: "Bubble Sort",
-        desc: "Repeatedly steps through adjacent pairs and swaps out-of-order elements until no swaps occur in a full pass.",
+        desc: "Repeatedly steps through adjacent pairs and swaps out-of-order elements until a pass completes with zero swaps.",
         best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
         code: `for i = 0 to n - 1:\n  swapped = false\n  for j = 0 to n - i - 2:\n    if arr[j] > arr[j + 1]:\n      swap(arr[j], arr[j + 1]); swapped = true\n  if not swapped: break`
       },
@@ -518,21 +523,27 @@
         best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
         code: `do:\n  swapped = false\n  forward pass start..end-1; end--\n  backward pass end-1..start; start++\nwhile swapped`
       },
+      comb: {
+        title: "Comb Sort",
+        desc: "Improves on Bubble Sort by shrinking a gap by ~1.3x each pass to eliminate 'turtles' (small values near the end) early.",
+        best: "O(n log n)", avg: "O(n² / 2^p)", worst: "O(n²)", space: "O(1)",
+        code: `gap = n; shrink = 1.3\nwhile gap > 1 or swapped:\n  gap = max(1, floor(gap / shrink))\n  compare & swap (i, i + gap)`
+      },
       selection: {
         title: "Selection Sort",
-        desc: "Finds the minimum element in the unsorted region on each pass and swaps it into place.",
+        desc: "Scans the unsorted suffix for the minimum element on each pass and swaps it into the next sorted slot.",
         best: "O(n²)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
         code: `for i = 0 to n - 1:\n  minIdx = findMin(arr, i, n - 1)\n  swap(arr[i], arr[minIdx])`
       },
       insertion: {
         title: "Insertion Sort",
-        desc: "Builds a sorted prefix one item at a time by shifting larger elements right and inserting the key.",
+        desc: "Builds a sorted prefix one item at a time by shifting larger elements right and inserting the current key.",
         best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
         code: `for i = 1 to n - 1:\n  key = arr[i]; j = i - 1\n  while j >= 0 and arr[j] > key:\n    arr[j + 1] = arr[j]; j--\n  arr[j + 1] = key`
       },
       shell: {
         title: "Shell Sort",
-        desc: "Sorts elements separated by a diminishing gap sequence so distant values reach their range quickly.",
+        desc: "Sorts elements separated by a diminishing gap sequence so distant values reach their target range quickly.",
         best: "O(n log n)", avg: "O(n^1.25)", worst: "O(n²)", space: "O(1)",
         code: `for gap = floor(n/2); gap > 0; gap = floor(gap/2):\n  for i = gap to n - 1:\n    gap-insert arr[i]`
       },
@@ -542,35 +553,46 @@
         best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
         code: `mergeSort(l, r):\n  if l >= r: return\n  m = floor((l + r) / 2)\n  mergeSort(l, m); mergeSort(m + 1, r)\n  merge(l, m, r)`
       },
-      quick: {
+      quickLomuto: {
         title: "Quick Sort (Lomuto)",
-        desc: "Partitions around a pivot element so smaller items move left and larger items move right, then recurses.",
+        desc: "Uses the last element as pivot, maintains a boundary for smaller items, and recurses on left and right partitions.",
         best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(log n)",
-        code: `quickSort(low, high):\n  if low < high:\n    p = partition(low, high)\n    quickSort(low, p - 1); quickSort(p + 1, high)`
+        code: `quickSort(low, high):\n  if low < high:\n    p = lomutoPartition(low, high)\n    quickSort(low, p - 1); quickSort(p + 1, high)`
+      },
+      quickHoare: {
+        title: "Quick Sort (Hoare)",
+        desc: "Uses two pointers moving inward from both ends around a pivot, performing fewer swaps on average than Lomuto.",
+        best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(log n)",
+        code: `quickSort(low, high):\n  if low < high:\n    p = hoarePartition(low, high)\n    quickSort(low, p); quickSort(p + 1, high)`
       },
       heap: {
         title: "Heap Sort",
-        desc: "Builds a max-heap in-place and repeatedly extracts the root maximum to the end of the array.",
+        desc: "Builds an in-place max-heap and repeatedly extracts the root maximum to the end of the unsorted region.",
         best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1)",
         code: `buildMaxHeap(arr)\nfor i = n - 1 down to 1:\n  swap(arr[0], arr[i]); heapify(i, 0)`
       },
       radix: {
         title: "Radix Sort (LSD Base-10)",
-        desc: "Groups integers digit by digit from least significant to most significant using stable buckets.",
+        desc: "Groups numbers digit by digit from least significant to most significant using stable buckets.",
         best: "O(d·(n + k))", avg: "O(d·(n + k))", worst: "O(d·(n + k))", space: "O(n + k)",
         code: `for exp = 1; floor(max / exp) > 0; exp *= 10:\n  stableBucketSortByDigit(arr, exp)`
       },
       counting: {
         title: "Counting Sort",
-        desc: "Tallies value frequencies and writes sorted values back directly without pairwise comparisons.",
+        desc: "Tallies value frequencies in a count array and writes sorted elements back directly without comparisons.",
         best: "O(n + k)", avg: "O(n + k)", worst: "O(n + k)", space: "O(k)",
         code: `count frequencies of each value\nwrite each value count[val] times in order`
+      },
+      bitonic: {
+        title: "Bitonic Sort",
+        desc: "Constructs bitonic sequences (monotonically rising then falling) and merges them via compare-exchange networks.",
+        best: "O(n log² n)", avg: "O(n log² n)", worst: "O(n log² n)", space: "O(log² n)",
+        code: `bitonicSort(lo, cnt, dir):\n  if cnt > 1:\n    k = floor(cnt / 2)\n    bitonicSort(lo, k, ASC); bitonicSort(lo+k, k, DESC)\n    bitonicMerge(lo, cnt, dir)`
       }
     };
 
     /**
-     * Reliable Web Audio Synthesizer
-     * Uses explicit per-note gain scheduling + safe cooldown + automatic AudioContext resume.
+     * Web Audio Synthesizer with subtle harmonic shimmer & clean envelope
      */
     class SoundEngine {
       constructor() {
@@ -605,8 +627,7 @@
       getFrequency(ratio) {
         const t = Math.max(0, Math.min(1, ratio));
         if (this.scale === 'continuous' || !this.scales[this.scale]) {
-          // 160 Hz to 1050 Hz exponential curve
-          return 160 * Math.pow(1050 / 160, t);
+          return 160 * Math.pow(1080 / 160, t);
         }
         const intervals = this.scales[this.scale];
         const octaves = 3;
@@ -614,11 +635,11 @@
         const idx = Math.min(total - 1, Math.floor(t * total));
         const octave = Math.floor(idx / intervals.length);
         const semitone = octave * 12 + intervals[idx % intervals.length];
-        const midi = 48 + semitone; // C3
+        const midi = 48 + semitone;
         return 440 * Math.pow(2, (midi - 69) / 12);
       }
 
-      play(value, maxVal, duration = 0.065, force = false) {
+      play(value, maxVal, duration = 0.06, force = false, harmonic = false) {
         if (!this.enabled || this.volume <= 0.001) return;
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
@@ -631,20 +652,20 @@
         }
 
         const now = this.ctx.currentTime;
-        // Minimum spacing prevents clipping/clicks during fast multi-step frames
-        if (!force && now - this.lastNoteTime < 0.022) return;
+        const minGap = force ? 0 : (state.array.length > 900 ? 0.032 : 0.02);
+        if (now - this.lastNoteTime < minGap) return;
         this.lastNoteTime = now;
 
         const freq = this.getFrequency(value / Math.max(maxVal, 1));
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        osc.type = this.waveform;
+        osc.type = harmonic ? 'triangle' : this.waveform;
         osc.frequency.setValueAtTime(freq, now);
 
-        const peak = Math.min(0.45, Math.max(0.01, this.volume * 0.42));
+        const peak = Math.min(0.42, Math.max(0.01, this.volume * (harmonic ? 0.25 : 0.38)));
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(peak, now + 0.006);
+        gain.gain.linearRampToValueAtTime(peak, now + 0.005);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
         osc.connect(gain);
@@ -653,33 +674,12 @@
         osc.start(now);
         osc.stop(now + duration + 0.015);
       }
-
-      playSweepDone() {
-        if (!this.enabled || this.volume <= 0.001) return;
-        this.unlock().then((ctx) => {
-          if (!ctx) return;
-          const notes = [523.25, 659.25, 783.99, 1046.5];
-          notes.forEach((freq, i) => {
-            const start = ctx.currentTime + i * 0.07;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, start);
-            const peak = Math.min(0.35, this.volume * 0.35);
-            gain.gain.setValueAtTime(0.0001, start);
-            gain.gain.linearRampToValueAtTime(peak, start + 0.012);
-            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.25);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(start);
-            osc.stop(start + 0.27);
-          });
-        });
-      }
     }
 
     /**
-     * State & DOM
+     * Application State & DOM
+     * Note: `sorted` only populates during the final verification sweep so bars
+     * stay unsorted/active colors until the sort is genuinely complete.
      */
     const state = {
       originalArray: [],
@@ -693,7 +693,7 @@
       elapsedMs: 0,
       lastTickTime: 0,
       rafId: null,
-      highlights: { compare: [], swap: [], pivot: [], sorted: new Set() }
+      highlights: { compare: [], swap: [], pivot: [], verify: [], sorted: new Set() }
     };
 
     const audio = new SoundEngine();
@@ -716,7 +716,6 @@
       waveSelect: document.getElementById('waveSelect'),
       scaleSelect: document.getElementById('scaleSelect'),
       volumeSlider: document.getElementById('volumeSlider'),
-      canvasFrame: document.getElementById('canvasFrame'),
       sortCanvas: document.getElementById('sortCanvas'),
       statusText: document.getElementById('statusText'),
       compCount: document.getElementById('compCount'),
@@ -735,7 +734,7 @@
     const ctx = dom.sortCanvas.getContext('2d');
 
     /**
-     * Array Generation
+     * Array Generation (up to 2,000 items)
      */
     function generateArray() {
       stopExecution();
@@ -744,39 +743,39 @@
       const arr = [];
 
       if (dist === 'random') {
-        for (let i = 0; i < size; i++) arr.push(Math.floor(Math.random() * 96) + 4);
+        for (let i = 0; i < size; i++) arr.push(Math.floor(Math.random() * 960) + 40);
       } else if (dist === 'reversed') {
         for (let i = 0; i < size; i++) {
-          arr.push(Math.max(4, Math.round(4 + ((size - 1 - i) / Math.max(size - 1, 1)) * 96)));
+          arr.push(Math.max(40, Math.round(40 + ((size - 1 - i) / Math.max(size - 1, 1)) * 960)));
         }
       } else if (dist === 'nearly') {
         for (let i = 0; i < size; i++) {
-          arr.push(Math.max(4, Math.round(4 + (i / Math.max(size - 1, 1)) * 96)));
+          arr.push(Math.max(40, Math.round(40 + (i / Math.max(size - 1, 1)) * 960)));
         }
         const swaps = Math.max(2, Math.floor(size * 0.08));
         for (let s = 0; s < swaps; s++) {
           const a = Math.floor(Math.random() * size);
-          const b = Math.min(size - 1, a + Math.floor(Math.random() * 6) + 1);
+          const b = Math.min(size - 1, a + Math.floor(Math.random() * 10) + 1);
           [arr[a], arr[b]] = [arr[b], arr[a]];
         }
       } else if (dist === 'fewUnique') {
-        const palette = [16, 36, 56, 76, 96];
+        const palette = [160, 360, 560, 760, 960];
         for (let i = 0; i < size; i++) arr.push(palette[i % palette.length]);
         for (let i = arr.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [arr[i], arr[j]] = [arr[j], arr[i]];
         }
       } else if (dist === 'sawtooth') {
-        const teeth = 4;
+        const teeth = 5;
         for (let i = 0; i < size; i++) {
           const phase = ((i * teeth) % size) / size;
-          arr.push(Math.max(5, Math.round(5 + phase * 95)));
+          arr.push(Math.max(50, Math.round(50 + phase * 950)));
         }
       } else if (dist === 'mountain') {
         for (let i = 0; i < size; i++) {
           const norm = i / Math.max(size - 1, 1);
           const peak = 1 - Math.abs(norm * 2 - 1);
-          arr.push(Math.max(5, Math.round(5 + peak * 95)));
+          arr.push(Math.max(50, Math.round(50 + peak * 950)));
         }
       }
 
@@ -792,7 +791,7 @@
       state.comparisons = 0;
       state.swaps = 0;
       state.elapsedMs = 0;
-      state.highlights = { compare: [], swap: [], pivot: [], sorted: new Set() };
+      state.highlights = { compare: [], swap: [], pivot: [], verify: [], sorted: new Set() };
       updateStatsUI("Ready");
       dom.timeElapsed.textContent = "0.0s";
       dom.playPauseBtn.textContent = "▶ Start";
@@ -802,14 +801,20 @@
     }
 
     /**
-     * Canvas Renderer
+     * Canvas Renderer with subtle top-cap glow & value-based hue tinting
      */
-    function getColor(idx) {
+    function getColor(idx, val, maxVal) {
+      if (state.highlights.sorted.has(idx)) return '#10b981';
+      if (state.highlights.verify.includes(idx)) return '#22d3ee';
       if (state.highlights.swap.includes(idx)) return '#ef4444';
       if (state.highlights.compare.includes(idx)) return '#f59e0b';
       if (state.highlights.pivot.includes(idx)) return '#c084fc';
-      if (state.highlights.sorted.has(idx)) return '#10b981';
-      return '#6366f1';
+
+      // Subtle indigo-to-sky gradient by normalized value for visual depth
+      const ratio = val / Math.max(maxVal, 1);
+      const hue = 235 - ratio * 38; // 235 (indigo) -> 197 (sky blue)
+      const light = 56 + ratio * 10;
+      return `hsl(${hue.toFixed(0)}, 82%, ${light.toFixed(0)}%)`;
     }
 
     function renderCanvas() {
@@ -829,8 +834,8 @@
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, width, height);
 
-      // Subtle baseline
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+      // Baseline
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, height - 1);
@@ -844,10 +849,10 @@
         return;
       }
 
-      const maxVal = Math.max(...arr, 100);
-      const gap = n > 400 ? 0.4 : n > 160 ? 1 : 2;
-      const barWidth = Math.max(1, (width - gap * (n - 1)) / n);
-      const showLabels = n <= 28 && barWidth >= 18;
+      const maxVal = Math.max(...arr, 1000);
+      const gap = n > 800 ? 0 : n > 300 ? 0.5 : n > 120 ? 1 : 2;
+      const barWidth = Math.max(0.8, (width - gap * (n - 1)) / n);
+      const showLabels = n <= 24 && barWidth >= 22;
 
       ctx.font = '600 10px Inter, sans-serif';
       ctx.textAlign = 'center';
@@ -858,7 +863,7 @@
         const x = i * (barWidth + gap);
         const y = height - barHeight;
 
-        ctx.fillStyle = getColor(i);
+        ctx.fillStyle = getColor(i, arr[i], maxVal);
         ctx.fillRect(x, y, barWidth, barHeight);
 
         if (showLabels) {
@@ -878,7 +883,8 @@
     }
 
     /**
-     * Generator-Based Sorting Algorithms
+     * Generator-Based Sorting Algorithms (13 Algorithms)
+     * None mark elements green early — all green happens during the final verification check.
      */
     const SortingGenerators = {
       *bubble(arr) {
@@ -895,13 +901,8 @@
               yield { compare: [], swap: [j, j + 1], pivot: [], soundVal: arr[j + 1] };
             }
           }
-          state.highlights.sorted.add(n - 1 - i);
-          if (!swapped) {
-            for (let k = 0; k < n - i - 1; k++) state.highlights.sorted.add(k);
-            break;
-          }
+          if (!swapped) break;
         }
-        state.highlights.sorted.add(0);
       },
 
       *cocktail(arr) {
@@ -920,7 +921,6 @@
               yield { compare: [], swap: [i, i + 1], pivot: [], soundVal: arr[i + 1] };
             }
           }
-          state.highlights.sorted.add(end);
           end--;
           if (!swapped) break;
           swapped = false;
@@ -934,10 +934,30 @@
               yield { compare: [], swap: [i, i + 1], pivot: [], soundVal: arr[i] };
             }
           }
-          state.highlights.sorted.add(start);
           start++;
         }
-        for (let i = start; i <= end; i++) state.highlights.sorted.add(i);
+      },
+
+      *comb(arr) {
+        const n = arr.length;
+        let gap = n;
+        const shrink = 1.3;
+        let swapped = true;
+
+        while (gap > 1 || swapped) {
+          gap = Math.max(1, Math.floor(gap / shrink));
+          swapped = false;
+          for (let i = 0; i + gap < n; i++) {
+            state.comparisons++;
+            yield { compare: [i, i + gap], swap: [], pivot: [], soundVal: arr[i] };
+            if (arr[i] > arr[i + gap]) {
+              [arr[i], arr[i + gap]] = [arr[i + gap], arr[i]];
+              state.swaps++;
+              swapped = true;
+              yield { compare: [], swap: [i, i + gap], pivot: [], soundVal: arr[i + gap] };
+            }
+          }
+        }
       },
 
       *selection(arr) {
@@ -954,13 +974,11 @@
             state.swaps++;
             yield { compare: [], swap: [i, minIdx], pivot: [], soundVal: arr[i] };
           }
-          state.highlights.sorted.add(i);
         }
       },
 
       *insertion(arr) {
         const n = arr.length;
-        state.highlights.sorted.add(0);
         for (let i = 1; i < n; i++) {
           const key = arr[i];
           let j = i - 1;
@@ -979,7 +997,6 @@
           }
           arr[j + 1] = key;
           state.swaps++;
-          for (let k = 0; k <= i; k++) state.highlights.sorted.add(k);
           yield { compare: [], swap: [j + 1], pivot: [], soundVal: key };
         }
       },
@@ -1029,21 +1046,18 @@
             yield { compare: [left + i, mid + 1 + j], swap: [], pivot: [mid], soundVal: Math.min(leftPart[i], rightPart[j]) };
             arr[k] = leftPart[i] <= rightPart[j] ? leftPart[i++] : rightPart[j++];
             state.swaps++;
-            if (left === 0 && right === arr.length - 1) state.highlights.sorted.add(k);
             yield { compare: [], swap: [k], pivot: [], soundVal: arr[k] };
             k++;
           }
           while (i < leftPart.length) {
             arr[k] = leftPart[i++];
             state.swaps++;
-            if (left === 0 && right === arr.length - 1) state.highlights.sorted.add(k);
             yield { compare: [], swap: [k], pivot: [], soundVal: arr[k] };
             k++;
           }
           while (j < rightPart.length) {
             arr[k] = rightPart[j++];
             state.swaps++;
-            if (left === 0 && right === arr.length - 1) state.highlights.sorted.add(k);
             yield { compare: [], swap: [k], pivot: [], soundVal: arr[k] };
             k++;
           }
@@ -1052,15 +1066,12 @@
         yield* mergeSortHelper(0, arr.length - 1);
       },
 
-      *quick(arr) {
+      *quickLomuto(arr) {
         function* quickHelper(low, high) {
           if (low < high) {
             const p = yield* partition(low, high);
-            state.highlights.sorted.add(p);
             yield* quickHelper(low, p - 1);
             yield* quickHelper(p + 1, high);
-          } else if (low === high && low >= 0 && low < arr.length) {
-            state.highlights.sorted.add(low);
           }
         }
 
@@ -1081,6 +1092,44 @@
           state.swaps++;
           yield { compare: [], swap: [i + 1, high], pivot: [], soundVal: arr[i + 1] };
           return i + 1;
+        }
+
+        yield* quickHelper(0, arr.length - 1);
+      },
+
+      *quickHoare(arr) {
+        function* quickHelper(low, high) {
+          if (low < high) {
+            const p = yield* hoarePartition(low, high);
+            yield* quickHelper(low, p);
+            yield* quickHelper(p + 1, high);
+          }
+        }
+
+        function* hoarePartition(low, high) {
+          const pivotIdx = Math.floor((low + high) / 2);
+          const pivotVal = arr[pivotIdx];
+          let i = low - 1;
+          let j = high + 1;
+
+          while (true) {
+            do {
+              i++;
+              state.comparisons++;
+              yield { compare: [i], swap: [], pivot: [pivotIdx], soundVal: arr[i] };
+            } while (arr[i] < pivotVal);
+
+            do {
+              j--;
+              state.comparisons++;
+              yield { compare: [j], swap: [], pivot: [pivotIdx], soundVal: arr[j] };
+            } while (arr[j] > pivotVal);
+
+            if (i >= j) return j;
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+            state.swaps++;
+            yield { compare: [], swap: [i, j], pivot: [pivotIdx], soundVal: arr[i] };
+          }
         }
 
         yield* quickHelper(0, arr.length - 1);
@@ -1113,11 +1162,9 @@
         for (let i = n - 1; i > 0; i--) {
           [arr[0], arr[i]] = [arr[i], arr[0]];
           state.swaps++;
-          state.highlights.sorted.add(i);
           yield { compare: [], swap: [0, i], pivot: [], soundVal: arr[i] };
           yield* heapify(i, 0);
         }
-        state.highlights.sorted.add(0);
       },
 
       *radix(arr) {
@@ -1155,25 +1202,78 @@
           while (freq[v] > 0) {
             arr[writeIdx] = v;
             state.swaps++;
-            state.highlights.sorted.add(writeIdx);
             yield { compare: [], swap: [writeIdx], pivot: [], soundVal: v };
             writeIdx++;
             freq[v]--;
+          }
+        }
+      },
+
+      *bitonic(arr) {
+        const n = arr.length;
+        function* compareAndSwap(i, j, dir) {
+          state.comparisons++;
+          yield { compare: [i, j], swap: [], pivot: [], soundVal: arr[i] };
+          if ((dir === 1 && arr[i] > arr[j]) || (dir === 0 && arr[i] < arr[j])) {
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+            state.swaps++;
+            yield { compare: [], swap: [i, j], pivot: [], soundVal: arr[i] };
+          }
+        }
+
+        function* bitonicMerge(low, cnt, dir) {
+          if (cnt > 1) {
+            const k = Math.floor(cnt / 2);
+            for (let i = low; i < low + k; i++) {
+              yield* compareAndSwap(i, i + k, dir);
+            }
+            yield* bitonicMerge(low, k, dir);
+            yield* bitonicMerge(low + k, k, dir);
+          }
+        }
+
+        function* bitonicSort(low, cnt, dir) {
+          if (cnt > 1) {
+            const k = Math.floor(cnt / 2);
+            yield* bitonicSort(low, k, 1);
+            yield* bitonicSort(low + k, k, 0);
+            yield* bitonicMerge(low, cnt, dir);
+          }
+        }
+
+        yield* bitonicSort(0, n, 1);
+
+        // Bitonic sort requires power-of-two lengths; if user supplied non-power-of-two custom array, finish with insertion
+        let isPow2 = n > 0 && (n & (n - 1)) === 0;
+        if (!isPow2) {
+          for (let i = 1; i < n; i++) {
+            const key = arr[i];
+            let j = i - 1;
+            while (j >= 0 && arr[j] > key) {
+              state.comparisons++;
+              arr[j + 1] = arr[j];
+              state.swaps++;
+              yield { compare: [], swap: [j, j + 1], pivot: [], soundVal: arr[j + 1] };
+              j--;
+            }
+            arr[j + 1] = key;
+            state.swaps++;
           }
         }
       }
     };
 
     /**
-     * Execution Loop
+     * Execution & Final Verification Sweep
+     * Bars only turn green as the final check sweeps left-to-right across the sorted array.
      */
     function getStepsPerFrame() {
       const speed = parseInt(dom.speedSlider.value, 10);
       const size = state.array.length;
       if (speed <= 50) return 1;
       const factor = (speed - 50) / 50;
-      const scaleBoost = Math.max(1, Math.floor(size / 100));
-      return Math.max(1, Math.round(Math.pow(factor, 2.2) * 40 * scaleBoost));
+      const scaleBoost = Math.max(1, Math.floor(size / 120));
+      return Math.max(1, Math.round(Math.pow(factor, 2.3) * 55 * scaleBoost));
     }
 
     function getFrameIntervalMs() {
@@ -1189,7 +1289,7 @@
       }
       const next = state.generator.next();
       if (next.done) {
-        finishSorting();
+        startFinalVerificationSweep();
         return { done: true, payload: null };
       }
       return { done: false, payload: next.value };
@@ -1200,8 +1300,9 @@
       state.highlights.compare = compare;
       state.highlights.swap = swap;
       state.highlights.pivot = pivot;
+      state.highlights.verify = [];
       if (soundVal !== undefined) {
-        audio.play(soundVal, maxVal, 0.065);
+        audio.play(soundVal, maxVal, 0.06);
       }
     }
 
@@ -1215,6 +1316,46 @@
         renderCanvas();
         updateStatsUI();
       }
+    }
+
+    function startFinalVerificationSweep() {
+      stopExecution();
+      updateStatsUI("Verifying...");
+      state.highlights = { compare: [], swap: [], pivot: [], verify: [], sorted: new Set() };
+
+      const n = state.array.length;
+      const maxVal = Math.max(...state.array, 1);
+      const batchSize = Math.max(1, Math.ceil(n / 75));
+      let idx = 0;
+      let lastSweepTime = performance.now();
+
+      function sweepFrame(now) {
+        if (now - lastSweepTime >= 10) {
+          lastSweepTime = now;
+          const end = Math.min(n, idx + batchSize);
+          for (let i = idx; i < end; i++) {
+            state.highlights.sorted.add(i);
+          }
+          state.highlights.verify = [end - 1];
+          audio.play(state.array[Math.min(n - 1, end - 1)], maxVal, 0.05, false, true);
+          idx = end;
+          renderCanvas();
+        }
+
+        if (idx < n) {
+          state.rafId = requestAnimationFrame(sweepFrame);
+        } else {
+          state.highlights.verify = [];
+          state.isSorted = true;
+          renderCanvas();
+          updateStatsUI("Completed");
+          dom.playPauseBtn.textContent = "✔ Sorted";
+          dom.playPauseBtn.disabled = true;
+          dom.stepBtn.disabled = true;
+        }
+      }
+
+      state.rafId = requestAnimationFrame(sweepFrame);
     }
 
     function startExecution() {
@@ -1290,23 +1431,6 @@
       dom.opsPerFrame.textContent = "1";
     }
 
-    function finishSorting() {
-      stopExecution();
-      state.isSorted = true;
-      state.highlights = {
-        compare: [],
-        swap: [],
-        pivot: [],
-        sorted: new Set(state.array.map((_, i) => i))
-      };
-      renderCanvas();
-      updateStatsUI("Completed");
-      dom.playPauseBtn.textContent = "✔ Sorted";
-      dom.playPauseBtn.disabled = true;
-      dom.stepBtn.disabled = true;
-      audio.playSweepDone();
-    }
-
     function updateSidebarInfo() {
       const info = ALGO_INFO[dom.algoSelect.value];
       dom.algoTitle.textContent = info.title;
@@ -1339,8 +1463,8 @@
 
     dom.testSoundBtn.addEventListener('click', () => {
       audio.unlock().then(() => {
-        audio.play(40, 100, 0.14, true);
-        setTimeout(() => audio.play(85, 100, 0.18, true), 150);
+        audio.play(350, 1000, 0.13, true);
+        setTimeout(() => audio.play(880, 1000, 0.16, true), 140);
       });
     });
 
@@ -1349,18 +1473,18 @@
       dom.soundToggle.textContent = audio.enabled ? "🔊 Sound On" : "🔇 Sound Off";
       dom.soundToggle.classList.toggle('active', audio.enabled);
       if (audio.enabled) {
-        audio.unlock().then(() => audio.play(65, 100, 0.12, true));
+        audio.unlock().then(() => audio.play(650, 1000, 0.12, true));
       }
     });
 
     dom.waveSelect.addEventListener('change', (e) => {
       audio.waveform = e.target.value;
-      audio.unlock().then(() => audio.play(60, 100, 0.12, true));
+      audio.unlock().then(() => audio.play(600, 1000, 0.12, true));
     });
 
     dom.scaleSelect.addEventListener('change', (e) => {
       audio.scale = e.target.value;
-      audio.unlock().then(() => audio.play(70, 100, 0.12, true));
+      audio.unlock().then(() => audio.play(700, 1000, 0.12, true));
     });
 
     dom.volumeSlider.addEventListener('input', (e) => {
@@ -1379,14 +1503,14 @@
       const parsed = dom.customArrayInput.value
         .split(/[\s,]+/)
         .map((v) => parseInt(v, 10))
-        .filter((n) => !isNaN(n) && n > 0 && n <= 999);
+        .filter((n) => !isNaN(n) && n > 0 && n <= 9999);
 
       if (parsed.length < 2) {
-        alert("Enter at least 2 positive numbers (1–999) separated by commas or spaces.");
+        alert("Enter at least 2 positive numbers (1–9999) separated by commas or spaces.");
         return;
       }
 
-      state.originalArray = parsed.slice(0, 800);
+      state.originalArray = parsed.slice(0, 2000);
       dom.sizeSlider.value = state.originalArray.length;
       dom.sizeVal.textContent = state.originalArray.length;
       resetToOriginal();
